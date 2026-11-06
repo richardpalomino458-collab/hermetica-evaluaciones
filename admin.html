@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#052882">
+  <title>HERMÉTICA | Panel del evaluador</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-tablero" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></symbol>
+    <symbol id="i-tabla" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 10v10"/></symbol>
+    <symbol id="i-banco" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="19" cy="18" r="2"/></symbol>
+    <symbol id="i-intento" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></symbol>
+    <symbol id="i-gente" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"/></symbol>
+    <symbol id="i-engrane" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></symbol>
+    <symbol id="i-candado" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-escudo" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></symbol>
+    <symbol id="i-historial" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></symbol>
+    <symbol id="i-salir" viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></symbol>
+    <symbol id="i-excel" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8l8 8M16 8l-8 8"/></symbol>
+    <symbol id="i-subir" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></symbol>
+    <symbol id="i-mas" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-recargar" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></symbol>
+  </svg>
+
+  <header class="cabecera">
+    <div class="cabecera-in">
+      <a class="marca" href="admin.html">
+        <img src="logo-hermetica-blanco.png" alt="Hermética Puertas Industriales">
+        <span class="marca-txt"><span>Panel del evaluador</span></span>
+      </a>
+      <div class="acciones">
+        <span class="small" id="usuario" style="opacity:.85"></span>
+        <button class="enlace-admin" id="btnSalir" hidden style="background:none;cursor:pointer">
+          <svg class="ico" style="width:16px;height:16px"><use href="#i-salir"/></svg><span class="txt">Cerrar sesión</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== Acceso ===== -->
+  <div class="login" id="vLogin" hidden>
+    <div class="tarjeta">
+      <div class="login-logo"><img src="logo-hermetica.png" alt="Hermética"></div>
+      <h2 class="center">Acceso del evaluador</h2>
+      <form id="formLogin" class="mt" autocomplete="on">
+        <div class="campo"><label for="lEmail">Correo electrónico</label><input id="lEmail" type="email" autocomplete="username" required></div>
+        <div class="campo mt"><label for="lPass">Contraseña</label><input id="lPass" type="password" autocomplete="current-password" required></div>
+        <div id="msgLogin" class="mt"></div>
+        <button class="btn grande mt" style="width:100%" type="submit" id="btnLogin">Ingresar</button>
+      </form>
+      <div class="center mt"><button class="btn link" id="btnOlvido">¿Olvidó su contraseña?</button></div>
+      <div class="center small muted mt"><a href="index.html">Ir a la evaluación</a></div>
+    </div>
+  </div>
+
+  <!-- ===== Nueva contraseña (enlace de recuperación) ===== -->
+  <div class="login" id="vRecuperar" hidden>
+    <div class="tarjeta">
+      <h2 class="center">Nueva contraseña</h2>
+      <form id="formNueva" class="mt">
+        <div class="campo"><label for="nPass">Nueva contraseña (mínimo 10 caracteres)</label><input id="nPass" type="password" autocomplete="new-password" minlength="10" required></div>
+        <div class="campo mt"><label for="nPass2">Repita la contraseña</label><input id="nPass2" type="password" autocomplete="new-password" minlength="10" required></div>
+        <div id="msgNueva" class="mt"></div>
+        <button class="btn grande mt" style="width:100%" type="submit">Guardar contraseña</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== Panel ===== -->
+  <div class="admin-layout" id="vPanel" hidden>
+    <nav class="lateral" id="menu">
+      <button data-v="dashboard" class="act"><svg class="ico"><use href="#i-tablero"/></svg>Dashboard</button>
+      <button data-v="resultados"><svg class="ico"><use href="#i-tabla"/></svg>Resultados</button>
+      <button data-v="preguntas"><svg class="ico"><use href="#i-banco"/></svg>Bancos y preguntas</button>
+      <button data-v="evaluaciones"><svg class="ico"><use href="#i-intento"/></svg>Evaluaciones</button>
+      <button data-v="padron"><svg class="ico"><use href="#i-gente"/></svg>Padrón y zonas</button>
+      <button data-v="configuracion"><svg class="ico"><use href="#i-engrane"/></svg>Configuración</button>
+      <button data-v="evaluadores" id="mEvaluadores" hidden><svg class="ico"><use href="#i-escudo"/></svg>Evaluadores</button>
+      <button data-v="auditoria"><svg class="ico"><use href="#i-historial"/></svg>Auditoría</button>
+    </nav>
+    <main class="principal" id="principal"></main>
+  </div>
+
+  <div id="modales"></div>
+  <div id="toasts"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+  <script src="config.js"></script>
+  <script src="supabase.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
