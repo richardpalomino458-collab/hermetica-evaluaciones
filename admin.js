@@ -369,7 +369,8 @@
   function vResultados() {
     $('principal').innerHTML = `<section>
       <div class="titulo-sec"><h1>Resultados</h1>
-        <div class="row"><button class="btn" id="btnExportar"><svg class="ico"><use href="#i-excel"/></svg>Exportar Excel</button></div></div>
+        <div class="row"><button class="btn peligro" id="btnEliminarSel" hidden>Eliminar seleccionados</button>
+          <button class="btn" id="btnExportar"><svg class="ico"><use href="#i-excel"/></svg>Exportar Excel</button></div></div>
       ${htmlFiltros(`
         <div class="campo"><label>Estado</label><select name="estado"><option value="">Todos</option>
           <option>APROBADO</option><option>DESAPROBADO</option><option>ANULADO</option><option value="EN_CURSO">EN CURSO</option><option>REINICIADO</option></select></div>
@@ -379,6 +380,10 @@
       <div class="tabla-wrap"><table id="tRes"></table></div></section>`;
     $('filtros').addEventListener('submit', e => { e.preventDefault(); cargarResultados(); });
     $('btnExportar').addEventListener('click', exportarResultados);
+    $('btnEliminarSel').addEventListener('click', () => {
+      const ids = [...document.querySelectorAll('.rChk:checked')].map(c => c.value);
+      if (ids.length) eliminarExamenes(ids, `${ids.length} examen(es) seleccionado(s)`);
+    });
     cargarResultados();
   }
 
@@ -388,16 +393,30 @@
     if (!vigente(n)) return;
     const r = A.resultados;
     $('resCont').textContent = `${r.length} registro(s). Haga clic en una fila para ver el detalle.`;
-    $('tRes').innerHTML = `<thead><tr><th>N.° envío</th><th>Nombre</th><th>DNI</th><th>Zona</th><th>Evaluación</th><th>Fecha</th>
+    const sa = esSuper();
+    $('tRes').innerHTML = `<thead><tr>${sa ? '<th><input type="checkbox" id="rTodos" title="Seleccionar todos"></th>' : ''}<th>N.° envío</th><th>Nombre</th><th>DNI</th><th>Zona</th><th>Evaluación</th><th>Fecha</th>
       <th class="num">Nota</th><th>Estado</th><th class="num">Salidas</th><th class="num">Infracciones</th><th>Tiempo</th></tr></thead><tbody>` +
       (r.length ? r.map(x => `<tr class="clic" data-id="${x.id}">
-        <td>${esc(x.numero_envio)}</td><td>${esc(x.nombre)}</td><td>${esc(x.dni)}</td><td>${esc(x.zona || '')}</td>
+        ${sa ? `<td><input type="checkbox" class="rChk" value="${x.id}"></td>` : ''}<td>${esc(x.numero_envio)}</td><td>${esc(x.nombre)}</td><td>${esc(x.dni)}</td><td>${esc(x.zona || '')}</td>
         <td>${esc(x.evaluacion)}</td><td>${fechaHora(x.inicio)}</td>
         <td class="num">${x.nota == null ? '—' : `<b>${num(x.nota)}</b> / ${num(x.puntaje_maximo)}`}</td>
         <td><span class="badge ${esc(x.estado)}">${esc(x.estado)}</span></td>
         <td class="num">${x.salidas}</td><td class="num">${x.infracciones}</td><td>${duracion(x.tiempo_segundos)}</td></tr>`).join('')
-        : '<tr><td colspan="11" class="vacio">No hay resultados con estos filtros.</td></tr>') + '</tbody>';
-    $('tRes').querySelectorAll('tr.clic').forEach(tr => tr.addEventListener('click', () => verDetalle(tr.dataset.id)));
+        : `<tr><td colspan="${sa ? 12 : 11}" class="vacio">No hay resultados con estos filtros.</td></tr>`) + '</tbody>';
+    $('tRes').querySelectorAll('tr.clic').forEach(tr => tr.addEventListener('click', e => {
+      if (e.target.closest('input')) return;
+      verDetalle(tr.dataset.id);
+    }));
+    const contarSel = () => {
+      const n = document.querySelectorAll('.rChk:checked').length;
+      $('btnEliminarSel').hidden = !n;
+      $('btnEliminarSel').textContent = `Eliminar seleccionados (${n})`;
+    };
+    if (sa) {
+      $('rTodos').onchange = () => { document.querySelectorAll('.rChk').forEach(c => { c.checked = $('rTodos').checked; }); contarSel(); };
+      document.querySelectorAll('.rChk').forEach(c => c.addEventListener('change', contarSel));
+    }
+    contarSel();
   }
 
   async function verDetalle(id) {
@@ -441,6 +460,7 @@
       <div class="row mt">
         ${i.estado !== 'anulado' ? '<button class="btn peligro mini" id="dAnular">Anular examen</button>' : ''}
         ${!i.invalidado ? '<button class="btn sec mini" id="dReiniciar">Autorizar nuevo intento (reiniciar)</button>' : ''}
+        ${esSuper() ? '<button class="btn sec mini" id="dEliminar" style="color:#B5322B">Eliminar examen</button>' : ''}
       </div>
       <div class="pestanas mt2"><button class="act" data-p="temas">Resultados por tema</button><button data-p="preg">Preguntas</button><button data-p="ev">Eventos (${d.eventos.length})</button></div>
       <div data-panel="temas"><div class="tabla-wrap"><table><thead><tr><th>Tema</th><th class="num">Preguntas</th><th class="num">Correctas</th><th class="num">%</th></tr></thead><tbody>
@@ -459,6 +479,8 @@
       try { await rpc('adm_anular_intento', { p_intento: id, p_motivo: motivo }); toast('Examen anulado.', 'ok'); m.cerrar(); cargarResultados(); }
       catch (e) { err(e); }
     };
+    const el = m.q('#dEliminar');
+    if (el) el.onclick = () => { m.cerrar(); eliminarExamenes([id], `el examen ${i.numero_envio} de ${i.nombre}`); };
     const re = m.q('#dReiniciar');
     if (re) re.onclick = async () => {
       const motivo = await pedirTexto('Autorizar nuevo intento',
@@ -467,6 +489,27 @@
       if (!motivo) return;
       try { await rpc('adm_reiniciar_intento', { p_intento: id, p_motivo: motivo }); toast('Nuevo intento autorizado.', 'ok'); m.cerrar(); cargarResultados(); }
       catch (e) { err(e); }
+    };
+  }
+
+  function esSuper() { return !!(A.perfil && A.perfil.rol === 'superadmin'); }
+
+  function eliminarExamenes(ids, etiqueta) {
+    const m = modal(`<div class="modal-cab"><h2>Eliminar exámenes</h2></div>
+      <div class="alerta error"><div>Se eliminará <b>${esc(etiqueta)}</b> con sus respuestas y eventos. <b>No se puede deshacer.</b>
+        El DNI podrá volver a rendir. Queda constancia en Auditoría.<br>
+        <span class="small">Si es un técnico real y solo quiere darle otra oportunidad, use "Reiniciar": conserva el historial.</span></div></div>
+      <div class="campo mt"><label>Motivo</label><textarea id="eMot" maxlength="300" placeholder="Ej.: examen de prueba del sistema"></textarea></div>
+      <div class="campo mt"><label>Escriba <b>ELIMINAR</b> para confirmar</label><input id="eConf" autocomplete="off"></div>
+      <div class="modal-pie"><button class="btn sec" data-cerrar>Cancelar</button><button class="btn peligro" id="eOk">Eliminar definitivamente</button></div>`);
+    m.q('#eOk').onclick = async () => {
+      const motivo = m.q('#eMot').value.trim();
+      if (motivo.length < 5) { toast('Escriba el motivo (mínimo 5 caracteres).', 'error'); return; }
+      if (m.q('#eConf').value.trim().toUpperCase() !== 'ELIMINAR') { toast('Escriba ELIMINAR para confirmar.', 'error'); return; }
+      try {
+        const r = await rpc('adm_eliminar_intentos', { p_ids: ids, p_motivo: motivo });
+        m.cerrar(); toast(`${r.eliminados} examen(es) eliminado(s).`, 'ok'); cargarResultados();
+      } catch (e) { err(e); }
     };
   }
 
@@ -939,7 +982,7 @@
       <div class="titulo-sec"><h1>Evaluaciones</h1><div class="row"><button class="btn" id="evNueva"><svg class="ico"><use href="#i-mas"/></svg>Nueva evaluación</button></div></div>
       <p class="small muted">Cada evaluación tiene su propia configuración. Los cambios no alteran los resultados ya registrados.</p>
       <div class="lista-eval">${A.evals.map(e => `<div class="tarjeta" style="margin:0">
-        <div class="row between"><span class="badge ${e.estado}">${e.estado.toUpperCase()}</span>${e.mostrar_en_inicio ? '' : '<span class="small muted">Oculta en inicio</span>'}</div>
+        <div class="row between"><span class="badge ${e.estado}">${e.estado.toUpperCase()}</span><span class="small muted">${e.requiere_padron ? 'Solo padrón' : 'Abierta a todos'}${e.mostrar_en_inicio ? '' : ' · Oculta en inicio'}</span></div>
         <h3 class="mt" style="margin-bottom:4px">${esc(e.nombre)}</h3>
         <div class="small muted">Banco: ${esc(bancos[e.banco_id] || '')}</div>
         <div class="small mt">${e.total_preguntas} preguntas (${e.modo_seleccion === 'por_tema' ? 'por tema' : 'del banco completo'}) · ${e.tiempo_minutos} min ·
@@ -985,7 +1028,7 @@
     const ev = e || { codigo: '', nombre: '', empresa: 'Hermética S.A.C.', banco_id: A.bancos[0] && A.bancos[0].id, modo_seleccion: 'por_tema',
       preguntas_por_tema: 4, total_preguntas: 20, puntaje_maximo: 20, puntaje_minimo: 13, tiempo_minutos: 20, intentos_permitidos: 1,
       infracciones_permitidas: 3, pausa_segundos: 5, plazo_recuperacion_segundos: 30, mezclar_preguntas: true, mezclar_alternativas: true,
-      tipos_infraccion: TIPOS_INFRACCION.slice(0, 10).map(t => t[0]), mostrar_en_inicio: true, estado: 'cerrada', orden: A.evals.length + 1 };
+      tipos_infraccion: TIPOS_INFRACCION.slice(0, 10).map(t => t[0]), mostrar_en_inicio: true, requiere_padron: false, estado: 'cerrada', orden: A.evals.length + 1 };
     let dist = [];
     if (e) { try { dist = await sel(sb.from('evaluacion_temas').select('*').eq('evaluacion_id', e.id)); } catch (x) { /* nada */ } }
     const v = (k) => esc(ev[k] ?? '');
@@ -1002,6 +1045,7 @@
         <div class="campo"><label>Banco de preguntas</label><select id="xBan">${opciones(A.bancos, ev.banco_id)}</select></div>
         <div class="campo"><label>Orden en la pantalla de inicio</label><input type="number" id="xOrd" value="${v('orden')}"></div>
         <label class="check"><input type="checkbox" id="xMos" ${ev.mostrar_en_inicio ? 'checked' : ''}>Mostrar en la pantalla de inicio</label>
+        <label class="check"><input type="checkbox" id="xPad" ${ev.requiere_padron ? 'checked' : ''}>Solo trabajadores del padrón (desmarcado: cualquier DNI puede rendir, una sola vez)</label>
       </div>
       <h3 class="mt2">Preguntas</h3>
       <div class="campos">
@@ -1085,6 +1129,7 @@
         id: e ? e.id : null, codigo: m.q('#xCod').value.trim().toLowerCase(), nombre: m.q('#xNom').value, titulo: m.q('#xTit').value,
         empresa: m.q('#xEmp').value, fecha_referencia: m.q('#xFec').value || null, instrucciones: m.q('#xIns').value,
         banco_id: m.q('#xBan').value, orden: Number(m.q('#xOrd').value) || 0, mostrar_en_inicio: m.q('#xMos').checked,
+        requiere_padron: m.q('#xPad').checked,
         modo_seleccion: modo, total_preguntas: Number(m.q('#xTot').value) || 1, preguntas_por_tema: ppt,
         mezclar_preguntas: m.q('#xMp').checked, mezclar_alternativas: m.q('#xMa').checked,
         puntaje_maximo: Number(m.q('#xMax').value), puntaje_minimo: Number(m.q('#xMin').value),
