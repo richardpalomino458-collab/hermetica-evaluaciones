@@ -152,9 +152,12 @@
     $('infTiempo').textContent = ev.tiempo_minutos + ' min';
     $('infMin').textContent = `${num(ev.puntaje_minimo)} / ${num(ev.puntaje_maximo)}`;
     $('infInt').textContent = ev.intentos_permitidos;
-    $('avisoReglas').innerHTML = `Reglas de supervisión: se toleran <b>${ev.infracciones_permitidas}</b> infracciones; ` +
-      `la siguiente <b>anula</b> el examen. En cada infracción las preguntas se ocultan durante <b>${ev.pausa_segundos} s</b> ` +
-      `y tiene <b>${ev.plazo_recuperacion_segundos} s</b> para volver a la evaluación.`;
+    $('avisoReglas').innerHTML = Number(ev.infracciones_permitidas) === 0
+      ? `Reglas de supervisión: <b>cualquier salida de la evaluación</b> (cambiar de aplicación, pestaña o pantalla, ` +
+        `minimizar o salir de pantalla completa) <b>ANULA el examen de inmediato</b>. Active "No molestar" en su celular antes de comenzar.`
+      : `Reglas de supervisión: se toleran <b>${ev.infracciones_permitidas}</b> infracciones; ` +
+        `la siguiente <b>anula</b> el examen. En cada infracción las preguntas se ocultan durante <b>${ev.pausa_segundos} s</b> ` +
+        `y tiene <b>${ev.plazo_recuperacion_segundos} s</b> para volver a la evaluación.`;
     $('btnContinuar').disabled = !ev.abierta;
     if (!ev.abierta) alerta('msgForm', 'Esta evaluación no está abierta en este momento.', 'info');
     else alerta('msgForm', '');
